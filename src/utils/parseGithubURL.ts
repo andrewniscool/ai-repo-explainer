@@ -28,7 +28,8 @@ export function parseGitHubURL(url: string): ParseGitHubResult {
             error: `Invalid URL: ${url}`,
         };
     }
-    const [owner, repository] = pathParts;
+    const [owner, rawRepository] = pathParts;
+    const repository = rawRepository.replace(/\.git$/, '');
     return {
         ok: true,
         repository: { owner, repository }
