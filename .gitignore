@@ -25,4 +25,5 @@ dist-ssr
 
 # Ignore all environment files containing secrets
 .env
-.env.local
+.env.*
+!.env.example
