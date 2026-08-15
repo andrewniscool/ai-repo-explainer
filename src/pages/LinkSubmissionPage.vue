@@ -1,40 +1,40 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import LinkSubmission from './../components/LinkSubmission.vue'
-import type { GitHubRepository } from '../utils/parseGithubURL.ts'
+import { ref } from "vue";
+import LinkSubmission from "./../components/LinkSubmission.vue";
+import type { GitHubRepository } from "../utils/parseGithubURL.ts";
 
 type RepositoryMetadata = {
-  owner: string
-  repository: string
-  description: string | null
-  stars: number
-  defaultBranch: string
-  languages: Record<string, number>
-  license: string | null
-}
+  owner: string;
+  repository: string;
+  description: string | null;
+  stars: number;
+  defaultBranch: string;
+  languages: Record<string, number>;
+  license: string | null;
+};
 
-const metadata = ref<RepositoryMetadata | null>(null)
-const isLoading = ref(false)
-const errorMessage = ref('')
+const metadata = ref<RepositoryMetadata | null>(null);
+const isLoading = ref(false);
+const errorMessage = ref("");
 
 async function handleRepository(repository: GitHubRepository) {
   metadata.value = null;
-  errorMessage.value = '';
+  errorMessage.value = "";
   isLoading.value = true;
 
   try {
-    const owner = encodeURIComponent(repository.owner)
-    const repo = encodeURIComponent(repository.repository)
+    const owner = encodeURIComponent(repository.owner);
+    const repo = encodeURIComponent(repository.repository);
 
     const url = `/api/repository-metadata/${owner}/${repo}`;
     const response = await fetch(url);
-    if(!response.ok) {
-      throw new Error (`Failed to fetch metadata: ${response.statusText}`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch metadata: ${response.statusText}`);
     }
     const data: RepositoryMetadata = await response.json();
     metadata.value = data;
   } catch (error) {
-    errorMessage.value = 'Failed to fetch repository metadata.';
+    errorMessage.value = "Failed to fetch repository metadata.";
   } finally {
     isLoading.value = false;
   }
@@ -49,7 +49,7 @@ async function handleRepository(repository: GitHubRepository) {
           <p class="eyebrow">Repository overview</p>
           <h1 id="hero-title">
             Understand <span class="highlight">any</span> Repository
-          </h1>          
+          </h1>
           <p class="hero-copy">Paste a public GitHub URL to get started.</p>
           <LinkSubmission @submit="handleRepository" />
 
@@ -75,8 +75,7 @@ async function handleRepository(repository: GitHubRepository) {
   </div>
 </template>
 
-<style scoped> 
-
+<style scoped>
 .highlight {
   color: var(--primary);
 }
@@ -101,7 +100,7 @@ async function handleRepository(repository: GitHubRepository) {
 .eyebrow {
   margin: 0 0 18px;
   color: #7f8ba7;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -136,7 +135,7 @@ h1 {
 .repository-result strong {
   margin-left: 4px;
   color: #edf2ff;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 500;
 }
 
@@ -154,7 +153,9 @@ h1 {
 
 .result-enter-active,
 .result-leave-active {
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .result-enter-from,
@@ -162,5 +163,4 @@ h1 {
   opacity: 0;
   transform: translateY(6px);
 }
-
 </style>

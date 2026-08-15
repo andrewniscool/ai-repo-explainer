@@ -1,33 +1,36 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { parseGitHubURL } from '../utils/parseGithubURL'
-import type { GitHubRepository } from '../utils/parseGithubURL'
+import { ref } from "vue";
+import { parseGitHubURL } from "../utils/parseGithubURL";
+import type { GitHubRepository } from "../utils/parseGithubURL";
 
 const emit = defineEmits<{
-  submit: [repository: GitHubRepository]
-}>()
+  submit: [repository: GitHubRepository];
+}>();
 
-const repositoryUrl = ref('')
-const errorMessage = ref('')
+const repositoryUrl = ref("");
+const errorMessage = ref("");
 
-const examples = ['https://github.com/vuejs/core', 'https://github.com/vitejs/vite']
+const examples = [
+  "https://github.com/vuejs/core",
+  "https://github.com/vitejs/vite",
+];
 
 function submitRepository() {
-  errorMessage.value = ''
+  errorMessage.value = "";
 
-  const result = parseGitHubURL(repositoryUrl.value.trim())
+  const result = parseGitHubURL(repositoryUrl.value.trim());
 
   if (!result.ok) {
-    errorMessage.value = result.error
-    return
+    errorMessage.value = result.error;
+    return;
   }
 
-  emit('submit', result.repository)
+  emit("submit", result.repository);
 }
 
 function useExample(url: string) {
-  repositoryUrl.value = url
-  errorMessage.value = ''
+  repositoryUrl.value = url;
+  errorMessage.value = "";
 }
 </script>
 
@@ -53,13 +56,22 @@ function useExample(url: string) {
       </button>
     </div>
 
-    <p v-if="errorMessage" id="repository-error" class="form-message form-message--error">
+    <p
+      v-if="errorMessage"
+      id="repository-error"
+      class="form-message form-message--error"
+    >
       {{ errorMessage }}
     </p>
     <p v-else id="repository-hint" class="form-message">
       Try
-      <button v-for="example in examples" :key="example" type="button" @click="useExample(example)">
-        {{ example.replace('https://github.com/', '') }}
+      <button
+        v-for="example in examples"
+        :key="example"
+        type="button"
+        @click="useExample(example)"
+      >
+        {{ example.replace("https://github.com/", "") }}
       </button>
     </p>
   </form>
@@ -76,7 +88,7 @@ function useExample(url: string) {
   display: block;
   margin: 0 0 9px 3px;
   color: #b8c2dc;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -92,12 +104,16 @@ function useExample(url: string) {
   border-radius: 15px;
   background: #0d1323;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.32);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .input-shell:focus-within {
   border-color: rgba(169, 198, 255, 0.72);
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.32), 0 0 0 4px rgba(112, 151, 255, 0.1);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.32),
+    0 0 0 4px rgba(112, 151, 255, 0.1);
 }
 
 .input-shell--error {
@@ -123,7 +139,7 @@ function useExample(url: string) {
   height: 8px;
   border: 2px solid #7482a3;
   border-radius: 99px;
-  content: '';
+  content: "";
 }
 
 .input-shell input {
@@ -134,7 +150,7 @@ function useExample(url: string) {
   outline: 0;
   color: #e8edff;
   background: transparent;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 14px;
 }
 
@@ -156,7 +172,9 @@ function useExample(url: string) {
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;
-  transition: transform 160ms ease, background 160ms ease;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
 }
 
 .input-shell button:hover {
@@ -191,7 +209,7 @@ function useExample(url: string) {
   color: #aab7d7;
   background: transparent;
   cursor: pointer;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 12px;
 }
 

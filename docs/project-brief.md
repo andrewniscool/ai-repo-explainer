@@ -141,4 +141,3 @@ For each step:
 Codex should default to coaching and review. The developer can override this at
 any time with a direct request such as “implement this part,” “show me the full
 example,” or “fix it for me.”
-

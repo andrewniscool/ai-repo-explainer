@@ -51,4 +51,3 @@ fine to make small edits when the developer explicitly requests them.
 
 Follow the phases in `docs/project-brief.md`. Keep the current milestone working
 before expanding scope. The first milestone contains no AI integration.
-
