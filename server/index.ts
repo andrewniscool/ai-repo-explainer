@@ -1,6 +1,9 @@
 import "dotenv/config";
 import express from "express";
+import { annotateRepositoryTree } from "./analysis/annotateRepositoryTree";
 import { fetchRepositoryMetadata } from "./github/fetchRepositoryMetadata";
+import { fetchRepositoryTree } from "./github/fetchRepositoryTree";
+import { getGitHubErrorResponse } from "./github/githubErrorResponse";
 
 const app = express();
 const port = 3001;
@@ -16,16 +19,26 @@ app.get("/api/health", (req, res) => {
 });
 
 app.get<{ owner: string; repository: string }>(
-  "/api/repository-metadata/:owner/:repository",
+  "/api/repositories/:owner/:repository",
   async (req, res) => {
     const { owner, repository } = req.params;
 
     try {
       const metadata = await fetchRepositoryMetadata(owner, repository);
-      res.json(metadata);
+      const tree = await fetchRepositoryTree(
+        owner,
+        repository,
+        metadata.defaultBranch,
+      );
+
+      res.json({
+        metadata,
+        files: annotateRepositoryTree(tree.files),
+        truncated: tree.truncated,
+      });
     } catch (error) {
-      console.error("Error fetching repository metadata:", error);
-      res.status(500).json({ error: "Failed to fetch repository metadata" });
+      const errorMessage = getGitHubErrorResponse(error);
+      res.status(errorMessage.status).json({ error: errorMessage.message });
     }
   },
 );

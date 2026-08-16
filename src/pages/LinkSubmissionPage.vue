@@ -13,12 +13,30 @@ type RepositoryMetadata = {
   license: string | null;
 };
 
-const metadata = ref<RepositoryMetadata | null>(null);
+type RepositoryFile = {
+  path: string;
+  sha: string;
+  size: number | null;
+  analyzable: boolean;
+  exclusionReason: string | null;
+};
+
+type RepositoryResult = {
+  metadata: RepositoryMetadata;
+  files: RepositoryFile[];
+  truncated: boolean;
+};
+
+type ApiErrorResponse = {
+  error: string;
+};
+
+const result = ref<RepositoryResult | null>(null);
 const isLoading = ref(false);
 const errorMessage = ref("");
 
 async function handleRepository(repository: GitHubRepository) {
-  metadata.value = null;
+  result.value = null;
   errorMessage.value = "";
   isLoading.value = true;
 
@@ -26,15 +44,18 @@ async function handleRepository(repository: GitHubRepository) {
     const owner = encodeURIComponent(repository.owner);
     const repo = encodeURIComponent(repository.repository);
 
-    const url = `/api/repository-metadata/${owner}/${repo}`;
+    const url = `/api/repositories/${owner}/${repo}`;
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to fetch metadata: ${response.statusText}`);
+      const data: ApiErrorResponse = await response.json();
+      errorMessage.value = data.error || "Failed to fetch repository.";
+      throw new Error(errorMessage.value);
     }
-    const data: RepositoryMetadata = await response.json();
-    metadata.value = data;
+    const data: RepositoryResult = await response.json();
+    result.value = data;
   } catch (error) {
-    errorMessage.value = "Failed to fetch repository metadata.";
+    errorMessage.value =
+      error instanceof Error ? error.message : "Failed to fetch repository.";
   } finally {
     isLoading.value = false;
   }
@@ -66,8 +87,37 @@ async function handleRepository(repository: GitHubRepository) {
             <p v-else-if="errorMessage" role="alert">
               {{ errorMessage }}
             </p>
-
-            <pre v-else-if="metadata">{{ metadata }}</pre>
+            <section v-else-if="result" class="repository-result">
+              <p v-if="result.truncated" role="status">
+                GitHub truncated this repository tree. The analysis may be
+                incomplete.
+              </p>
+              <h2>
+                {{ result.metadata.owner }}/{{ result.metadata.repository }}
+              </h2>
+              <p>
+                {{ result.metadata.description ?? "No description provided." }}
+              </p>
+              <p>
+                {{ result.metadata.stars.toLocaleString() }} stars · Default
+                branch: {{ result.metadata.defaultBranch }} ·
+                {{ result.files.filter((file) => file.analyzable).length }} of
+                {{ result.files.length }} files analyzable
+              </p>
+              <h3>Repository files</h3>
+              <ul>
+                <li
+                  v-for="file in result.files"
+                  :key="file.path"
+                  :class="{ 'file--excluded': !file.analyzable }"
+                >
+                  <code>{{ file.path }}</code>
+                  <span v-if="!file.analyzable">
+                    — not analyzed: {{ file.exclusionReason }}
+                  </span>
+                </li>
+              </ul>
+            </section>
           </Transition>
         </div>
       </section>
@@ -124,6 +174,44 @@ h1 {
 }
 
 .repository-result {
+  margin: 32px auto 0;
+  padding: 24px;
+  border: 1px solid rgba(169, 198, 255, 0.2);
+  border-radius: 15px;
+  background: #0d1323;
+  text-align: left;
+}
+
+.repository-result ul {
+  max-height: 360px;
+  margin: 12px 0 0;
+  padding-left: 24px;
+  overflow: auto;
+}
+
+.repository-result li {
+  margin: 6px 0;
+  color: #aab5cf;
+}
+
+.repository-result .file--excluded {
+  color: #75809c;
+}
+
+.repository-result .file--excluded span {
+  font-size: 12px;
+}
+
+.repository-result h2,
+.repository-result h3 {
+  color: #edf2ff;
+}
+
+.repository-result p {
+  color: #aab5cf;
+}
+
+.repository-ready {
   display: inline-flex;
   margin-top: 22px;
   align-items: center;
