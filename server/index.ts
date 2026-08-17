@@ -1,20 +1,21 @@
 import "dotenv/config";
 import express from "express";
-import { annotateRepositoryTree } from "./analysis/annotateRepositoryTree";
-import { fetchRepositoryMetadata } from "./github/fetchRepositoryMetadata";
-import { fetchRepositoryTree } from "./github/fetchRepositoryTree";
-import { getGitHubErrorResponse } from "./github/githubErrorResponse";
+import { annotateRepositoryTree } from "./analysis/annotateRepositoryTree.ts";
+import { fetchRepositoryMetadata } from "./github/fetchRepositoryMetadata.ts";
+import { fetchRepositoryTree } from "./github/fetchRepositoryTree.ts";
+import { getGitHubErrorResponse } from "./github/githubErrorResponse.ts";
+import { detectTechnologies } from "./analysis/detectTechnologies.ts";
 
 const app = express();
 const port = 3001;
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Hello, World!");
 });
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
@@ -31,9 +32,13 @@ app.get<{ owner: string; repository: string }>(
         metadata.defaultBranch,
       );
 
+      const annotatedFiles = annotateRepositoryTree(tree.files);
+      const technologies = detectTechnologies(annotatedFiles);
+
       res.json({
         metadata,
-        files: annotateRepositoryTree(tree.files),
+        files: annotatedFiles,
+        technologies,
         truncated: tree.truncated,
       });
     } catch (error) {

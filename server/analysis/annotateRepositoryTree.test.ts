@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { annotateRepositoryTree } from "./annotateRepositoryTree";
-import type { RepositoryFile } from "../types/repository";
+import { annotateRepositoryTree } from "./annotateRepositoryTree.ts";
+import type { RepositoryFile } from "../types/repository.ts";
 
 function file(path: string, size: number | null = 100): RepositoryFile {
   return { path, size, sha: `sha-${path}` };

@@ -1,5 +1,5 @@
-import type { RepositoryFile } from "./../types/repository";
-import { octokit } from "./octokitClient";
+import type { RepositoryFile } from "./../types/repository.ts";
+import { octokit } from "./octokitClient.ts";
 
 type RepositoryTreeResult = {
   files: RepositoryFile[];
@@ -29,10 +29,13 @@ export async function fetchRepositoryTree(
     tree_sha: commitResponse.data.tree.sha,
     recursive: "true",
   });
+
+  type TreeItem = (typeof treeResponse.data.tree)[number];
+
   return {
     files: treeResponse.data.tree
       .filter(
-        (item): item is typeof item & { path: string; sha: string } =>
+        (item: TreeItem): item is TreeItem & { path: string; sha: string } =>
           item.type === "blob" && item.path != null && item.sha != null,
       )
       .map((item) => ({

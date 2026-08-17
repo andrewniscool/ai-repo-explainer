@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getGitHubErrorResponse } from "./githubErrorResponse";
+import { getGitHubErrorResponse } from "./githubErrorResponse.ts";
 
 describe("getGitHubErrorResponse", () => {
   it("maps a missing repository to a useful 404 response", () => {

@@ -13,7 +13,10 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "server:dev": "tsx watch server/index.ts"
+    "server:dev": "tsx watch server/index.ts",
+    "typecheck:server": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:frontend": "vue-tsc --noEmit -p tsconfig.app.json",
+    "typecheck": "vue-tsc -b"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

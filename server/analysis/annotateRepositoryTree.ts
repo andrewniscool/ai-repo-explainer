@@ -2,7 +2,7 @@ import type {
   AnnotatedRepositoryFile,
   FileExclusionReason,
   RepositoryFile,
-} from "../types/repository";
+} from "../types/repository.ts";
 
 const MAX_ANALYZABLE_FILE_SIZE_BYTES = 500_000;
 

@@ -1,4 +1,4 @@
-import { octokit } from "./octokitClient";
+import { octokit } from "./octokitClient.ts";
 
 export type RepositoryMetadata = {
   owner: string;
