@@ -25,3 +25,10 @@ export type DetectedTechnology = {
   matchingFileCount: number;
   evidence: TechnologyEvidence[];
 };
+
+export type RepositoryFileContent = {
+  path: string;
+  content: string;
+  sha: string;
+  size: number;
+};
