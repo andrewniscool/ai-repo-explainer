@@ -252,9 +252,9 @@ describe("detectTechnologies", () => {
       file("app/main.py"),
     ]);
 
-    expect(
-      result.find(({ name }) => name === "Rust")?.evidence[0]?.path,
-    ).toBe("src/main.rs");
+    expect(result.find(({ name }) => name === "Rust")?.evidence[0]?.path).toBe(
+      "src/main.rs",
+    );
     expect(
       result.find(({ name }) => name === "Python")?.evidence[0]?.path,
     ).toBe("app/main.py");
