@@ -5,6 +5,7 @@ import { fetchRepositoryMetadata } from "./github/fetchRepositoryMetadata.ts";
 import { fetchRepositoryTree } from "./github/fetchRepositoryTree.ts";
 import { getGitHubErrorResponse } from "./github/githubErrorResponse.ts";
 import { detectTechnologies } from "./analysis/detectTechnologies.ts";
+import { detectEntryPoints } from "./analysis/detectEntryPoint.ts";
 
 const app = express();
 const port = 3001;
@@ -34,11 +35,13 @@ app.get<{ owner: string; repository: string }>(
 
       const annotatedFiles = annotateRepositoryTree(tree.files);
       const technologies = detectTechnologies(annotatedFiles);
+      const entryPoints = detectEntryPoints(annotatedFiles);
 
       res.json({
         metadata,
         files: annotatedFiles,
         technologies,
+        entryPoints,
         truncated: tree.truncated,
       });
     } catch (error) {

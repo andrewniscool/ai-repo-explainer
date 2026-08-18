@@ -1,4 +1,5 @@
 import type { AnnotatedRepositoryFile } from "../types/repository.ts";
+import { isLikelyEntryPoint } from "./detectEntryPoint.ts";
 
 const MAX_CONTENT_CANDIDATES = 20;
 const MAX_FILE_BYTES = 100_000;
@@ -14,22 +15,6 @@ const priorityFilenames = new Set([
   "go.mod",
   "pom.xml",
   "build.gradle",
-]);
-
-const entryPointStems = new Set(["main", "index", "app", "server", "program"]);
-
-const sourceExtensions = new Set([
-  "ts",
-  "tsx",
-  "js",
-  "jsx",
-  "py",
-  "rs",
-  "go",
-  "java",
-  "c",
-  "cpp",
-  "cs",
 ]);
 
 const configFiles = new Set([
@@ -76,7 +61,7 @@ export function selectContentCandidates(
     const filename = file.path.split("/").at(-1)?.toLowerCase() ?? "";
 
     return (
-      isLikelyEntryPoint(filename) ||
+      isLikelyEntryPoint(file.path) ||
       readmePattern.test(filename) ||
       isConfigurationFile(filename) ||
       priorityFilenames.has(filename)
@@ -130,26 +115,13 @@ function scoreCandidate(file: AnnotatedRepositoryFile): number {
   if (isRootLevel) {
     score += 5;
   }
-  if (isLikelyEntryPoint(fileName)) {
+  if (isLikelyEntryPoint(file.path)) {
     score += 7;
   }
   if (isConfigurationFile(fileName)) {
     score += 6;
   }
   return score;
-}
-
-function isLikelyEntryPoint(filename: string): boolean {
-  const parts = filename.toLowerCase().split(".");
-
-  if (parts.length < 2) {
-    return false;
-  }
-
-  const stem = parts[0] ?? "";
-  const extension = parts.at(-1) ?? "";
-
-  return entryPointStems.has(stem) && sourceExtensions.has(extension);
 }
 
 function isConfigurationFile(filename: string): boolean {
