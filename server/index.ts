@@ -6,6 +6,7 @@ import { fetchRepositoryTree } from "./github/fetchRepositoryTree.ts";
 import { getGitHubErrorResponse } from "./github/githubErrorResponse.ts";
 import { detectTechnologies } from "./analysis/detectTechnologies.ts";
 import { detectEntryPoints } from "./analysis/detectEntryPoint.ts";
+import { selectContentCandidates } from "./analysis/selectContentCandidates.ts";
 
 const app = express();
 const port = 3001;
@@ -36,13 +37,15 @@ app.get<{ owner: string; repository: string }>(
       const annotatedFiles = annotateRepositoryTree(tree.files);
       const technologies = detectTechnologies(annotatedFiles);
       const entryPoints = detectEntryPoints(annotatedFiles);
+      const importantFiles = selectContentCandidates(annotatedFiles).slice(0, 10);
 
       res.json({
         metadata,
+        truncated: tree.truncated,
         files: annotatedFiles,
         technologies,
         entryPoints,
-        truncated: tree.truncated,
+        importantFiles,
       });
     } catch (error) {
       const errorMessage = getGitHubErrorResponse(error);
