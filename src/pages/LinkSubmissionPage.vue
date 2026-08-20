@@ -21,9 +21,26 @@ type RepositoryFile = {
   exclusionReason: string | null;
 };
 
+type TechnologyCategory = "language" | "framework" | "database" | "tool";
+
+type TechnologyEvidence = {
+  path: string;
+  reason: string;
+};
+
+type DetectedTechnology = {
+  name: string;
+  category: TechnologyCategory;
+  matchingFileCount: number;
+  evidence: TechnologyEvidence[];
+};
+
 type RepositoryResult = {
   metadata: RepositoryMetadata;
   files: RepositoryFile[];
+  technologies: DetectedTechnology[];
+  entryPoints: RepositoryFile[];
+  importantFiles: RepositoryFile[];
   truncated: boolean;
 };
 
@@ -104,6 +121,37 @@ async function handleRepository(repository: GitHubRepository) {
                 {{ result.files.filter((file) => file.analyzable).length }} of
                 {{ result.files.length }} files analyzable
               </p>
+              <h3>Detected technologies</h3>
+              <p v-if="result.technologies.length === 0">
+                No technologies detected.
+              </p>
+              <ul v-else>
+                <li
+                  v-for="technology in result.technologies"
+                  :key="`${technology.category}:${technology.name}`"
+                >
+                  {{ technology.name }} —
+                  {{ technology.matchingFileCount }} matching files
+                </li>
+              </ul>
+              <h3>Likely entry points</h3>
+              <p v-if="result.entryPoints.length === 0">
+                No likely entry points detected.
+              </p>
+              <ul v-else>
+                <li v-for="file in result.entryPoints" :key="file.path">
+                  <code>{{ file.path }}</code>
+                </li>
+              </ul>
+              <h3>Important files</h3>
+              <p v-if="result.importantFiles.length === 0">
+                No important files identified.
+              </p>
+              <ol v-else>
+                <li v-for="file in result.importantFiles" :key="file.path">
+                  <code>{{ file.path }}</code>
+                </li>
+              </ol>
               <h3>Repository files</h3>
               <ul>
                 <li
@@ -182,7 +230,8 @@ h1 {
   text-align: left;
 }
 
-.repository-result ul {
+.repository-result ul,
+.repository-result ol {
   max-height: 360px;
   margin: 12px 0 0;
   padding-left: 24px;
