@@ -43,6 +43,36 @@ describe("selectImportantFiles", () => {
     ]);
   });
 
+  it("prefers public package boundaries over private tooling entry points", () => {
+    const result = selectImportantFiles([
+      file("README.md"),
+      file("package.json"),
+      file("packages-private/playground/src/main.ts"),
+      file("packages-private/vite-debug/main.ts"),
+      file("packages/compiler-core/index.js"),
+      file("packages/compiler-core/src/index.ts"),
+      file("packages/compiler-dom/src/index.ts"),
+      file("packages/compiler-sfc/src/index.ts"),
+      file("packages/compiler-ssr/src/index.ts"),
+      file("packages/reactivity/src/index.ts"),
+      file("packages/runtime-core/src/index.ts"),
+      file("packages/runtime-dom/src/index.ts"),
+      file("packages/vue/src/index.ts"),
+    ]);
+
+    const paths = result.map(({ path }) => path);
+
+    expect(paths).toHaveLength(10);
+    expect(paths).toContain("README.md");
+    expect(paths).toContain("package.json");
+    expect(paths).toContain("packages/compiler-core/src/index.ts");
+    expect(paths).toContain("packages/runtime-core/src/index.ts");
+    expect(paths).toContain("packages/vue/src/index.ts");
+    expect(paths).not.toContain("packages/compiler-core/index.js");
+    expect(paths).not.toContain("packages-private/playground/src/main.ts");
+    expect(paths).not.toContain("packages-private/vite-debug/main.ts");
+  });
+
   it("prevents documentation, manifests, and config files from dominating", () => {
     const result = selectImportantFiles([
       file("README.md"),

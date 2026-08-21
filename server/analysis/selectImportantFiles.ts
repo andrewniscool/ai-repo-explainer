@@ -1,10 +1,17 @@
 import type { AnnotatedRepositoryFile } from "../types/repository.ts";
-import { isLikelyEntryPoint } from "./detectEntryPoint.ts";
 
 const MAX_IMPORTANT_FILES = 10;
 const MAX_README_FILES = 1;
 const MAX_MANIFEST_FILES = 2;
 const MAX_CONFIG_FILES = 2;
+const PRODUCTION_SOURCE_SCORE = 4;
+const RUNTIME_ENTRY_POINT_SCORE = 12;
+const PACKAGE_BOUNDARY_SCORE = 4;
+const PRIMARY_SOURCE_BOUNDARY_SCORE = 2;
+const PRIVATE_TOOLING_PENALTY = 10;
+
+const runtimeEntryPointStems = new Set(["app", "main", "program", "server"]);
+const applicationDirectories = new Set(["app", "server", "src"]);
 
 const sourceExtensions = new Set([
   "c",
@@ -90,6 +97,7 @@ type CandidateCategory = "readme" | "manifest" | "config" | "source";
 
 type ImportantFileCandidate = {
   category: CandidateCategory;
+  diversityKey: string | null;
   file: AnnotatedRepositoryFile;
   score: number;
 };
@@ -116,14 +124,24 @@ export function selectImportantFiles(
     config: 0,
     source: 0,
   };
+  const selectedDiversityKeys = new Set<string>();
 
   for (const candidate of rankedCandidates) {
     if (hasReachedCategoryLimit(candidate.category, categoryCounts)) {
       continue;
     }
+    if (
+      candidate.diversityKey !== null &&
+      selectedDiversityKeys.has(candidate.diversityKey)
+    ) {
+      continue;
+    }
 
     selectedFiles.push(candidate.file);
     categoryCounts[candidate.category] += 1;
+    if (candidate.diversityKey !== null) {
+      selectedDiversityKeys.add(candidate.diversityKey);
+    }
 
     if (selectedFiles.length === MAX_IMPORTANT_FILES) {
       break;
@@ -149,7 +167,8 @@ function createCandidate(
     return {
       file,
       category: "readme",
-      score: 6 + (isRootLevel ? 2 : 0),
+      diversityKey: null,
+      score: 6 + (isRootLevel ? 6 : 0),
     };
   }
 
@@ -157,7 +176,8 @@ function createCandidate(
     return {
       file,
       category: "manifest",
-      score: 5 + (isRootLevel ? 2 : 0),
+      diversityKey: null,
+      score: 5 + (isRootLevel ? 5 : 0),
     };
   }
 
@@ -165,6 +185,7 @@ function createCandidate(
     return {
       file,
       category: "config",
+      diversityKey: null,
       score: 2 + (isRootLevel ? 1 : 0),
     };
   }
@@ -173,11 +194,79 @@ function createCandidate(
     return {
       file,
       category: "source",
-      score: 4 + (isLikelyEntryPoint(file.path) ? 12 : 0),
+      diversityKey: getPackageBoundaryKey(normalizedPath),
+      score: scoreSourceFile(normalizedPath),
     };
   }
 
   return null;
+}
+
+function scoreSourceFile(path: string): number {
+  const pathParts = path.split("/");
+  const filename = pathParts.at(-1) ?? "";
+  const stem = filename.split(".")[0] ?? "";
+  let score = PRODUCTION_SOURCE_SCORE;
+
+  if (
+    runtimeEntryPointStems.has(stem) ||
+    isTopLevelApplicationIndex(pathParts)
+  ) {
+    score += RUNTIME_ENTRY_POINT_SCORE;
+  } else if (stem === "index") {
+    score += PACKAGE_BOUNDARY_SCORE;
+
+    if (path.includes("/src/index.")) {
+      score += PRIMARY_SOURCE_BOUNDARY_SCORE;
+    }
+  }
+
+  if (isPrivateToolingPath(pathParts)) {
+    score -= PRIVATE_TOOLING_PENALTY;
+  }
+
+  return score;
+}
+
+function isTopLevelApplicationIndex(pathParts: string[]): boolean {
+  if (pathParts.length === 1) {
+    return (pathParts[0]?.split(".")[0] ?? "") === "index";
+  }
+
+  const filenameStem = pathParts.at(-1)?.split(".")[0] ?? "";
+  const parentDirectory = pathParts.at(-2) ?? "";
+
+  return (
+    pathParts.length === 2 &&
+    filenameStem === "index" &&
+    applicationDirectories.has(parentDirectory)
+  );
+}
+
+function isPrivateToolingPath(pathParts: string[]): boolean {
+  return pathParts.some(
+    (part) =>
+      part === "packages-private" ||
+      part === "private" ||
+      part.includes("playground") ||
+      part === "debug" ||
+      part.endsWith("-debug"),
+  );
+}
+
+function getPackageBoundaryKey(path: string): string | null {
+  const pathParts = path.split("/");
+  const filenameStem = pathParts.at(-1)?.split(".")[0] ?? "";
+
+  if (
+    pathParts[0] !== "packages" ||
+    pathParts.length < 3 ||
+    filenameStem !== "index"
+  ) {
+    return null;
+  }
+
+  return `package-boundary:${pathParts[0]}/${pathParts[1]}`;
 }
 
 function isReadme(filename: string): boolean {
