@@ -7,6 +7,9 @@ import { getGitHubErrorResponse } from "./github/githubErrorResponse.ts";
 import { detectTechnologies } from "./analysis/detectTechnologies.ts";
 import { detectEntryPoints } from "./analysis/detectEntryPoint.ts";
 import { selectImportantFiles } from "./analysis/selectImportantFiles.ts";
+import { selectContentCandidates } from "./analysis/selectContentCandidates.ts";
+import { fetchRepositoryFileContents } from "./github/fetchRepositoryFileContents.ts";
+import { detectPackageTechnologies } from "./analysis/detectPackageTechnologies.ts";
 
 const app = express();
 const port = 3001;
@@ -35,7 +38,34 @@ app.get<{ owner: string; repository: string }>(
       );
 
       const annotatedFiles = annotateRepositoryTree(tree.files);
-      const technologies = detectTechnologies(annotatedFiles);
+      // Fetch only manifests for this step, within the existing content budgets.
+      const manifests = annotatedFiles.filter(
+        (file) =>
+          file.analyzable && file.path.split("/").at(-1) === "package.json",
+      );
+      const candidates = selectContentCandidates(manifests);
+      const contents = await fetchRepositoryFileContents(
+        owner,
+        repository,
+        candidates,
+      );
+      const packageAnalysis = detectPackageTechnologies(contents.files);
+      const technologies = [
+        ...detectTechnologies(annotatedFiles),
+        ...packageAnalysis.technologies,
+      ];
+      const analysisWarnings = [
+        ...packageAnalysis.warnings,
+        ...contents.failures.map(
+          ({ path }) =>
+            `Could not fetch ${path}; dependency detection may be incomplete.`,
+        ),
+      ];
+      if (candidates.length < manifests.length) {
+        analysisWarnings.push(
+          "Some package manifests were skipped because of content limits.",
+        );
+      }
       const entryPoints = detectEntryPoints(annotatedFiles);
       const importantFiles = selectImportantFiles(annotatedFiles);
 
@@ -46,6 +76,7 @@ app.get<{ owner: string; repository: string }>(
         technologies,
         entryPoints,
         importantFiles,
+        analysisWarnings,
       });
     } catch (error) {
       const errorMessage = getGitHubErrorResponse(error);

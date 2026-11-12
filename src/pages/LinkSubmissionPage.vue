@@ -42,6 +42,7 @@ type RepositoryResult = {
   entryPoints: RepositoryFile[];
   importantFiles: RepositoryFile[];
   truncated: boolean;
+  analysisWarnings: string[];
 };
 
 type ApiErrorResponse = {
@@ -122,6 +123,13 @@ async function handleRepository(repository: GitHubRepository) {
                 {{ result.files.length }} files analyzable
               </p>
               <h3>Detected technologies</h3>
+              <p
+                v-for="warning in result.analysisWarnings"
+                :key="warning"
+                role="status"
+              >
+                {{ warning }}
+              </p>
               <p v-if="result.technologies.length === 0">
                 No technologies detected.
               </p>
@@ -130,8 +138,16 @@ async function handleRepository(repository: GitHubRepository) {
                   v-for="technology in result.technologies"
                   :key="`${technology.category}:${technology.name}`"
                 >
-                  {{ technology.name }} —
+                  {{ technology.name }} ({{ technology.category }}) —
                   {{ technology.matchingFileCount }} matching files
+                  <ul>
+                    <li
+                      v-for="evidence in technology.evidence"
+                      :key="evidence.path"
+                    >
+                      <code>{{ evidence.path }}</code> — {{ evidence.reason }}
+                    </li>
+                  </ul>
                 </li>
               </ul>
               <h3>Likely entry points</h3>
